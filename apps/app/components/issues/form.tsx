@@ -4,10 +4,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 
+import useSWR from "swr";
+
 // react-hook-form
 import { Controller, useForm } from "react-hook-form";
 // services
 import aiService from "services/ai.service";
+import issuesService from "services/issues.service";
 // hooks
 import useToast from "hooks/use-toast";
 // components
@@ -39,6 +42,9 @@ import { SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { cosineSimilarity } from "helpers/string.helper";
 // types
 import type { ICurrentUserResponse, IIssue } from "types";
+import { IRemirrorRichTextEditor } from "components/rich-text-editor";
+// fetch-keys
+import { PROJECT_ISSUES_LIST } from "constants/fetch-keys";
 // rich-text-editor
 const RemirrorRichTextEditor = dynamic(() => import("components/rich-text-editor"), {
   ssr: false,
@@ -48,8 +54,6 @@ const RemirrorRichTextEditor = dynamic(() => import("components/rich-text-editor
     </Loader>
   ),
 });
-
-import { IRemirrorRichTextEditor } from "components/rich-text-editor";
 
 const WrappedRemirrorRichTextEditor = React.forwardRef<
   IRemirrorRichTextEditor,
@@ -82,7 +86,6 @@ const defaultValues: Partial<IIssue> = {
 export interface IssueFormProps {
   handleFormSubmit: (values: Partial<IIssue>) => Promise<void>;
   initialData?: Partial<IIssue>;
-  issues: IIssue[];
   projectId: string;
   setActiveProject: React.Dispatch<React.SetStateAction<string | null>>;
   createMore: boolean;
@@ -108,7 +111,6 @@ export interface IssueFormProps {
 export const IssueForm: FC<IssueFormProps> = ({
   handleFormSubmit,
   initialData,
-  issues = [],
   projectId,
   setActiveProject,
   createMore,
@@ -150,6 +152,15 @@ export const IssueForm: FC<IssueFormProps> = ({
   });
 
   const issueName = watch("name");
+
+  const { data: issues } = useSWR(
+    workspaceSlug && projectId !== ""
+      ? PROJECT_ISSUES_LIST(workspaceSlug as string, projectId)
+      : null,
+    workspaceSlug && projectId !== ""
+      ? () => issuesService.getIssues(workspaceSlug as string, projectId)
+      : null
+  );
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -285,16 +296,16 @@ export const IssueForm: FC<IssueFormProps> = ({
                   <span
                     className="block h-1.5 w-1.5 rounded-full"
                     style={{
-                      backgroundColor: issues.find((i) => i.id === watch("parent"))?.state_detail
+                      backgroundColor: issues?.find((i) => i.id === watch("parent"))?.state_detail
                         .color,
                     }}
                   />
                   <span className="flex-shrink-0 text-custom-text-200">
                     {/* {projects?.find((p) => p.id === projectId)?.identifier}- */}
-                    {issues.find((i) => i.id === watch("parent"))?.sequence_id}
+                    {issues?.find((i) => i.id === watch("parent"))?.sequence_id}
                   </span>
                   <span className="truncate font-medium">
-                    {issues.find((i) => i.id === watch("parent"))?.name.substring(0, 50)}
+                    {issues?.find((i) => i.id === watch("parent"))?.name.substring(0, 50)}
                   </span>
                   <XMarkIcon
                     className="h-3 w-3 cursor-pointer"

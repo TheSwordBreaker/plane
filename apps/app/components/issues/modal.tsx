@@ -93,15 +93,6 @@ export const CreateUpdateIssueModal: React.FC<IssuesModalProps> = ({
       assignees: [...(prePopulateData?.assignees ?? []), user?.id ?? ""],
     };
 
-  const { data: issues } = useSWR(
-    workspaceSlug && activeProject
-      ? PROJECT_ISSUES_LIST(workspaceSlug as string, activeProject ?? "")
-      : null,
-    workspaceSlug && activeProject
-      ? () => issuesService.getIssues(workspaceSlug as string, activeProject ?? "")
-      : null
-  );
-
   const { data: projects } = useSWR(
     workspaceSlug ? PROJECTS_LIST(workspaceSlug as string) : null,
     workspaceSlug ? () => projectService.getProjects(workspaceSlug as string) : null
@@ -349,7 +340,6 @@ export const CreateUpdateIssueModal: React.FC<IssuesModalProps> = ({
             >
               <Dialog.Panel className="relative transform rounded-lg border border-custom-border-100 bg-custom-background-100 p-5 text-left shadow-xl transition-all sm:w-full sm:max-w-2xl">
                 <IssueForm
-                  issues={issues ?? []}
                   handleFormSubmit={handleFormSubmit}
                   initialData={data ?? prePopulateData}
                   createMore={createMore}
